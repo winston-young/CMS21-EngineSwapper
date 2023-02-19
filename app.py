@@ -1,21 +1,24 @@
 
 import os
-import re
 import fileinput
 import sys
 from car import Car 
 
 STEAM_PATHS = [
-
+    r"C:\Program Files (x86)\Steam\steamapps\workshop\content\1190000",
+    r"C:\Program Files (x86)\Steam\steamapps\common\Car Mechanic Simulator 2021\Car Mechanic Simulator 2021_Data\StreamingAssets\Cars"
 ]
 
 def get_car_paths():
     car_paths = []
     for steam_path in STEAM_PATHS:
         for root, dirs, files in os.walk(steam_path, topdown=False):
-            for name in files:
-                if name.startswith('config'):
-                    car_paths.append(os.path.join(root, name))
+            try:
+                for name in files:
+                    if name.startswith('config'):
+                        car_paths.append(os.path.join(root, name))
+            except:
+                pass
 
         return car_paths
 
@@ -55,26 +58,21 @@ def get_all_swap_options(cars):
 
     return list(engines)
 
-def replace(file, pattern, subst):
-    file_handle = open(file, 'r')
-    file_string = file_handle.read()
-    file_handle.close()
-
-    # Use RE package to allow for replacement (also allowing for (multiline) REGEX)
-    file_string = (re.sub(pattern, subst, file_string))
-
-    # Write contents to file.
-    # Using mode 'w' truncates the file.
-    file_handle = open(file, 'w')
-    file_handle.write(file_string)
-    file_handle.close()
+def replace(filename, search_expression, all_swap_options):
+    for line in fileinput.input(filename, inplace=1):
+        if search_expression in line:
+            line = line.replace(search_expression, all_swap_options)
+            sys.stdout.write(line)
+            return
+        sys.stdout.write(line)
 
 def modify_swap_options(car, options):
     car_path = car.specs['car_path']
+    swap_options_pattern = r'swapoptions'
     replacement_options = 'swapoptions=' + ','.join(options)
     for filename in [filename for filename in os.listdir(car.specs['car_path']) if filename.startswith('config')]:
         config_path = os.path.join(car_path, filename)
-
+        replace(config_path, swap_options_pattern, replacement_options)
 
 
 
